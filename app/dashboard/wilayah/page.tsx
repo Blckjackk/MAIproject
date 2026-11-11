@@ -1,9 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { DashboardHeader } from "@/components/dashboard-shell"
 import { masterWilayah, masterBeswan } from "@/lib/mock-data"
-import { Users, MapPin, Search, ChevronRight, CheckCircle, AlertTriangle } from "lucide-react"
+import { exportToCsv } from "@/lib/export-csv"
+import { Search, Download, Users } from "lucide-react"
 
 export default function WilayahPage() {
   const [selectedWilayahId, setSelectedWilayahId] = useState<string | null>(null)
@@ -13,100 +14,126 @@ export default function WilayahPage() {
     ? masterWilayah.find((w) => w.id === selectedWilayahId)
     : null
 
-  const displayedBeswan = masterBeswan.filter((b) => {
-    const matchWilayah = selectedWilayahId ? b.wilayah === activeWilayah?.wilayah : true
-    const matchSearch =
-      b.nama.toLowerCase().includes(search.toLowerCase()) ||
-      b.nid.includes(search) ||
-      b.universitas.toLowerCase().includes(search.toLowerCase())
-    return matchWilayah && matchSearch
-  })
+  const displayedBeswan = useMemo(() => {
+    return masterBeswan.filter((b) => {
+      const matchWilayah = selectedWilayahId ? b.wilayah === activeWilayah?.wilayah : true
+      const matchSearch =
+        b.nama.toLowerCase().includes(search.toLowerCase()) ||
+        b.nid.includes(search) ||
+        b.universitas.toLowerCase().includes(search.toLowerCase())
+      return matchWilayah && matchSearch
+    })
+  }, [selectedWilayahId, activeWilayah, search])
+
+  const handleExportCsv = () => {
+    const exportData = displayedBeswan.map((b) => ({
+      NID: b.nid,
+      Nama_Beswan: b.nama,
+      Universitas: b.universitas,
+      Jurusan: b.jurusan,
+      Wilayah: b.wilayah,
+      Mentor: b.mentor,
+      Status: b.status,
+    }))
+    exportToCsv(
+      exportData,
+      `wilayah-mentor-${activeWilayah ? activeWilayah.id : "semua"}-${new Date().toISOString().slice(0, 10)}.csv`
+    )
+  }
 
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto bg-[#F6F8FB]">
+    <div className="flex flex-col flex-1 overflow-y-auto bg-[#F8F9FA]">
       <DashboardHeader
         title="Wilayah & Mentor"
-        subtitle="Kelompok pendampingan dan pembagian 120 beswan menurut wilayah"
+        subtitle="Distribusi 8 wilayah pendampingan dan penugasan mentor BBM Angkatan 6"
+        actions={
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 rounded-lg border border-[#DADCE0] bg-white px-3 py-1.5 text-xs font-medium text-[#3C4043] hover:bg-[#F8F9FA] hover:text-[#202124] transition-colors"
+          >
+            <Download className="h-3.5 w-3.5 text-[#5F6368]" />
+            <span>Ekspor CSV</span>
+          </button>
+        }
       />
 
-      <div className="flex-1 space-y-6 p-6">
-        {/* Info Banner */}
-        <div className="rounded-xl border border-[#27A9A5]/30 bg-[#27A9A5]/5 px-4 py-3 text-xs text-[#0f6c6a]">
-          <strong>Aturan Wilayah (Spec 5.3 & TBD-12):</strong> Setiap rekap menampilkan nama wilayah dan nama mentor secara konsisten. Kebijakan perpindahan wilayah/mentor selama program masih berstatus TBD-12 (sementara ini menggunakan penempatan master aktif).
-        </div>
-
+      <div className="flex-1 space-y-8 p-8 max-w-7xl">
         {/* 8 Wilayah Cards Grid */}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {masterWilayah.map((w) => {
-            const isSelected = selectedWilayahId === w.id
-            const beswanCount = masterBeswan.filter((b) => b.wilayah === w.wilayah).length
-            return (
-              <div
-                key={w.id}
-                onClick={() => setSelectedWilayahId(isSelected ? null : w.id)}
-                className={`cursor-pointer rounded-2xl border p-5 shadow-xs transition-all hover:shadow-md ${
-                  isSelected
-                    ? "border-[#1769AA] bg-white ring-2 ring-[#1769AA]/20"
-                    : "border-[#E5EAF1] bg-white hover:border-[#1769AA]/40"
-                }`}
-              >
-                <div className="flex items-start justify-between">
-                  <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
-                    isSelected ? "bg-[#12345B] text-white" : "bg-[#1769AA]/10 text-[#1769AA]"
-                  }`}>
-                    <MapPin className="h-4.5 w-4.5" />
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-[#202124]">Daftar 8 Wilayah Pendampingan</h2>
+            <span className="text-xs text-[#5F6368]">Pilih kartu wilayah untuk menyaring tabel</span>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {masterWilayah.map((w) => {
+              const isSelected = selectedWilayahId === w.id
+              const beswanCount = masterBeswan.filter((b) => b.wilayah === w.wilayah).length
+              return (
+                <div
+                  key={w.id}
+                  onClick={() => setSelectedWilayahId(isSelected ? null : w.id)}
+                  className={`cursor-pointer rounded-xl border p-5 transition-all ${
+                    isSelected
+                      ? "border-[#1A73E8] bg-[#F8FAFD] shadow-xs"
+                      : "border-[#E8EAED] bg-white hover:border-[#DADCE0] hover:bg-[#FAFAFA]"
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-mono text-xs font-semibold text-[#1A73E8]">{w.id}</span>
+                    <span className="text-xs text-[#5F6368]">{beswanCount} Peserta</span>
                   </div>
-                  <span className="font-mono text-xs font-bold text-[#64748B]">{w.id}</span>
-                </div>
 
-                <h3 className="mt-3 text-sm font-bold text-[#12345B] leading-tight">{w.wilayah}</h3>
-                <p className="mt-1 text-xs text-[#64748B]">
-                  Mentor: <strong className="text-[#172033] font-semibold">{w.mentor}</strong>
-                </p>
+                  <h3 className="mt-2 text-sm font-semibold text-[#202124] leading-tight">
+                    {w.wilayah.split("–")[0].trim()}
+                  </h3>
+                  <p className="mt-1 text-xs text-[#5F6368]">
+                    Mentor: <span className="text-[#202124] font-medium">{w.mentor}</span>
+                  </p>
 
-                <div className="mt-4 flex items-center justify-between border-t border-[#E5EAF1] pt-3 text-xs">
-                  <div className="flex items-center gap-1.5 text-[#12345B] font-semibold">
-                    <Users className="h-3.5 w-3.5 text-[#1769AA]" />
-                    <span>{beswanCount} Peserta</span>
+                  <div className="mt-3 flex items-center justify-between border-t border-[#E8EAED] pt-2 text-[11px]">
+                    <span className="text-[#5F6368]">Status Penempatan</span>
+                    <span className={isSelected ? "font-medium text-[#1A73E8]" : "text-[#5F6368]"}>
+                      {isSelected ? "Filter Aktif" : "Klik Filter"}
+                    </span>
                   </div>
-                  <span className="text-[11px] font-semibold text-[#1769AA]">
-                    {isSelected ? "Filter Aktif" : "Klik Filter"}
-                  </span>
                 </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
         </div>
 
-        {/* Tabel Detail Peserta per Wilayah */}
-        <div className="rounded-2xl border border-[#E5EAF1] bg-white shadow-xs">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-[#E5EAF1] px-6 py-4">
+        {/* Tabel Detail Peserta */}
+        <div className="rounded-xl border border-[#E8EAED] bg-white overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E8EAED] p-5">
             <div>
-              <h3 className="text-sm font-bold text-[#12345B]">
-                {activeWilayah ? `Daftar Anggota — ${activeWilayah.wilayah}` : "Seluruh Beswan Menurut Wilayah"}
-              </h3>
-              <p className="text-xs text-[#64748B]">
-                {activeWilayah ? `Di bawah bimbingan mentor ${activeWilayah.mentor}` : "Klik card wilayah di atas untuk memfilter satu wilayah tertentu"}
+              <h2 className="text-sm font-semibold text-[#202124]">
+                {activeWilayah ? `Anggota ${activeWilayah.wilayah}` : "Seluruh Peserta Menurut Wilayah"}
+              </h2>
+              <p className="text-xs text-[#5F6368] mt-0.5">
+                {activeWilayah
+                  ? `Didampingi oleh mentor ${activeWilayah.mentor} (${displayedBeswan.length} peserta)`
+                  : `Menampilkan seluruh ${displayedBeswan.length} peserta di 8 wilayah`}
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-3">
               {selectedWilayahId && (
                 <button
                   onClick={() => setSelectedWilayahId(null)}
-                  className="rounded-lg border border-[#E5EAF1] bg-[#F6F8FB] px-3 py-1.5 text-xs font-medium text-[#172033] hover:bg-slate-200"
+                  className="rounded-lg border border-[#DADCE0] px-3 py-1.5 text-xs font-medium text-[#3C4043] hover:bg-[#F8F9FA] transition-colors"
                 >
                   Tampilkan Semua Wilayah
                 </button>
               )}
-              <div className="relative min-w-[220px]">
-                <Search className="absolute left-2.5 top-2 h-3.5 w-3.5 text-[#64748B]" />
+
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#5F6368]" />
                 <input
                   type="text"
+                  placeholder="Cari NID, nama, universitas..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Cari NID, nama, universitas..."
-                  className="w-full rounded-lg border border-[#E5EAF1] bg-white pl-8 pr-3 py-1.5 text-xs text-[#172033] placeholder:text-[#64748B] focus:outline-none focus:ring-2 focus:ring-[#1769AA]/20"
+                  className="w-full rounded-lg border border-[#DADCE0] bg-white pl-9 pr-3 py-1.5 text-xs text-[#202124] placeholder-[#5F6368] focus:border-[#1A73E8] focus:outline-none"
                 />
               </div>
             </div>
@@ -115,42 +142,34 @@ export default function WilayahPage() {
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-[#E5EAF1] bg-[#F6F8FB]/70 text-[#64748B]">
-                  <th className="px-6 py-3 text-left font-semibold">NID</th>
-                  <th className="px-3 py-3 text-left font-semibold">Nama Beswan</th>
-                  <th className="px-3 py-3 text-left font-semibold">Universitas</th>
-                  <th className="px-3 py-3 text-left font-semibold">Wilayah</th>
-                  <th className="px-3 py-3 text-left font-semibold">Mentor Pendamping</th>
-                  <th className="px-6 py-3 text-center font-semibold">Status Data</th>
+                <tr className="border-b border-[#E8EAED] bg-[#F8F9FA] text-[#5F6368]">
+                  <th className="py-3 px-5 text-left font-medium">NID</th>
+                  <th className="py-3 px-5 text-left font-medium">Nama Beswan</th>
+                  <th className="py-3 px-5 text-left font-medium">Universitas</th>
+                  <th className="py-3 px-5 text-left font-medium">Jurusan</th>
+                  <th className="py-3 px-4 text-left font-medium">Wilayah</th>
+                  <th className="py-3 px-4 text-left font-medium">Mentor</th>
+                  <th className="py-3 px-5 text-right font-medium">Status</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E5EAF1]/50">
-                {displayedBeswan.slice(0, 30).map((b) => (
-                  <tr key={b.nid} className="hover:bg-[#F6F8FB] transition-colors">
-                    <td className="px-6 py-3 font-mono font-bold text-[#12345B]">{b.nid}</td>
-                    <td className="px-3 py-3 font-semibold text-[#172033]">{b.nama}</td>
-                    <td className="px-3 py-3 text-[#64748B]">{b.universitas}</td>
-                    <td className="px-3 py-3 font-medium text-[#172033]">{b.wilayah.split("–")[0].trim()}</td>
-                    <td className="px-3 py-3 text-[#64748B]">{b.mentor}</td>
-                    <td className="px-6 py-3 text-center">
-                      {b.status === "Aktif" ? (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700">
-                          <CheckCircle className="h-3 w-3" /> Aktif
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-[11px] font-semibold text-amber-800">
-                          <AlertTriangle className="h-3 w-3" /> Perlu Periksa
-                        </span>
-                      )}
+              <tbody className="divide-y divide-[#E8EAED]">
+                {displayedBeswan.map((b) => (
+                  <tr key={b.nid} className="hover:bg-[#F8F9FA] transition-colors">
+                    <td className="py-3.5 px-5 font-mono text-[#202124] font-medium">{b.nid}</td>
+                    <td className="py-3.5 px-5 font-medium text-[#202124]">{b.nama}</td>
+                    <td className="py-3.5 px-5 text-[#5F6368]">{b.universitas}</td>
+                    <td className="py-3.5 px-5 text-[#5F6368]">{b.jurusan}</td>
+                    <td className="py-3.5 px-4 font-medium text-[#202124]">{b.wilayah.split("–")[0].trim()}</td>
+                    <td className="py-3.5 px-4 text-[#5F6368]">{b.mentor}</td>
+                    <td className="py-3.5 px-5 text-right">
+                      <span className="inline-flex items-center rounded-md bg-[#E6F4EA] px-2 py-0.5 text-xs font-medium text-[#137333]">
+                        {b.status}
+                      </span>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
-
-          <div className="border-t border-[#E5EAF1] px-6 py-3 text-xs text-[#64748B]">
-            Menampilkan {Math.min(30, displayedBeswan.length)} dari {displayedBeswan.length} beswan · Sumber data: MASTER_BESWAN
           </div>
         </div>
       </div>

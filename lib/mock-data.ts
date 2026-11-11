@@ -12,6 +12,7 @@ export interface Beswan {
   nomorBeswan: string
   nama: string
   universitas: string
+  jurusan?: string
   wilayah: string
   mentor: string
   status: "Aktif" | "Perlu Pemeriksaan"
@@ -54,8 +55,10 @@ export interface Penugasan {
   wilayah: string
   mentor: string
   kategori: "MAI Foundation" | "Mentorship" | "MAI Wilayah" | "Pembinaan Nasional" | "Tugas Tambahan"
+  judulTugas?: string
   statusValidasi: StatusValidasi
   linkBukti?: string
+  linkBerkas?: string
   catatanAdmin?: string
   submittedAt?: string
   validasiAt?: string
@@ -75,6 +78,7 @@ export interface Prestasi {
   tanggalPelaporan: string
   bulanPelaporan: string
   linkBukti?: string
+  linkSertifikat?: string
   statusVerifikasi?: string
 }
 
@@ -84,6 +88,7 @@ export interface SumberData {
   kegunaan: string
   statusKoneksi: StatusKoneksi
   waktuBacaTerakhir: string
+  terakhirSinkron?: string
   jumlahBaris: number
   jumlahDipetakan: number
   jumlahNidTidakDikenal: number
@@ -123,6 +128,7 @@ export const ALL_121_NIDS: string[] = [
 const NAMA_DEPAN = ["Andi", "Bella", "Candra", "Dewi", "Eko", "Fitri", "Galih", "Hani", "Irfan", "Jeni", "Kevin", "Lina", "Mario", "Nina", "Omar", "Putri", "Raka", "Sinta", "Taufik", "Utami", "Wahyu", "Yulia", "Zainal", "Aditya", "Bagas", "Dina", "Farhan", "Hana", "Ilham", "Kurnia", "Maulana", "Naufal", "Pradana", "Rizky", "Syahrul", "Tirta"]
 const NAMA_BELAKANG = ["Pratama", "Sari", "Putra", "Rahayu", "Firmansyah", "Handayani", "Saputra", "Kusuma", "Maulana", "Wulandari", "Santoso", "Marlina", "Hidayat", "Susanti", "Fauzan", "Anggraeni", "Dwi", "Rahma", "Dewi", "Wijaya", "Kurniawan", "Nugroho", "Setiawan", "Utomo"]
 const UNIVERSITAS = ["Universitas Indonesia (UI)", "Institut Teknologi Bandung (ITB)", "Universitas Gadjah Mada (UGM)", "IPB University", "Universitas Padjadjaran (Unpad)", "Institut Teknologi Sepuluh Nopember (ITS)", "Universitas Airlangga (UNAIR)", "Universitas Diponegoro (Undip)", "Universitas Brawijaya (UB)", "UIN Syarif Hidayatullah", "Universitas Negeri Jakarta (UNJ)", "Binus University", "Universitas Trisakti"]
+const JURUSAN = ["Ilmu Komputer", "Teknik Elektro", "Manajemen Bisnis", "Akuntansi", "Ilmu Komunikasi", "Teknik Industri", "Ekonomi Syariah", "Teknologi Informasi", "Statistika", "Hukum"]
 
 export const masterBeswan: Beswan[] = ALL_121_NIDS.map((nid, index) => {
   const wilayahIndex = Math.min(Math.floor(index / 15), 7)
@@ -130,6 +136,7 @@ export const masterBeswan: Beswan[] = ALL_121_NIDS.map((nid, index) => {
   const depan = NAMA_DEPAN[index % NAMA_DEPAN.length]
   const belakang = NAMA_BELAKANG[(index * 3) % NAMA_BELAKANG.length]
   const univ = UNIVERSITAS[(index * 2) % UNIVERSITAS.length]
+  const jur = JURUSAN[(index * 3) % JURUSAN.length]
   const isFlagged = index === 13 || index === 87
 
   return {
@@ -137,6 +144,7 @@ export const masterBeswan: Beswan[] = ALL_121_NIDS.map((nid, index) => {
     nomorBeswan: String(index + 1).padStart(3, "0"),
     nama: `${depan} ${belakang}`,
     universitas: univ,
+    jurusan: jur,
     wilayah: wil.wilayah,
     mentor: wil.mentor,
     status: isFlagged ? "Perlu Pemeriksaan" : "Aktif",
@@ -161,6 +169,7 @@ export const sumberDataList: SumberData[] = [
     kegunaan: "Pembinaan Nasional, Mentorship awal, Tugas, Prestasi awal",
     statusKoneksi: "Terhubung",
     waktuBacaTerakhir: "11 Nov 2026, 12:45 WIB",
+    terakhirSinkron: "11 Nov 2026, 12:45 WIB",
     jumlahBaris: 487,
     jumlahDipetakan: 462,
     jumlahNidTidakDikenal: 8,
@@ -172,6 +181,7 @@ export const sumberDataList: SumberData[] = [
     kegunaan: "Rekap Mentorship periode 4 ke atas (historis per kelompok)",
     statusKoneksi: "Terhubung",
     waktuBacaTerakhir: "11 Nov 2026, 12:45 WIB",
+    terakhirSinkron: "11 Nov 2026, 12:45 WIB",
     jumlahBaris: 320,
     jumlahDipetakan: 315,
     jumlahNidTidakDikenal: 2,
@@ -183,6 +193,7 @@ export const sumberDataList: SumberData[] = [
     kegunaan: "Pendataan prestasi beswan (periode lebih baru)",
     statusKoneksi: "Gagal",
     waktuBacaTerakhir: "10 Nov 2026, 09:12 WIB",
+    terakhirSinkron: "10 Nov 2026, 09:12 WIB",
     jumlahBaris: 0,
     jumlahDipetakan: 0,
     jumlahNidTidakDikenal: 0,
@@ -220,6 +231,14 @@ export const rekapPembinaanWilayah = masterWilayah.map((w, i) => {
 })
 
 // ===================== PENUGASAN (Generated for 121 Beswan) =====================
+const JUDUL_TUGAS_MAP: Record<string, string> = {
+  "MAI Foundation": "Publikasi Konten Edukasi Zakat & Wakaf MAI",
+  "Mentorship": "Laporan Refleksi & Action Plan Mentoring",
+  "MAI Wilayah": "Dokumentasi & Laporan Kegiatan Lapangan Wilayah",
+  "Pembinaan Nasional": "Resume & Action Plan Seminar Pembinaan Nasional",
+  "Tugas Tambahan": "Kampanye Digital Milad & Brand Ambassador MAI",
+}
+
 export const dataPenugasan: Penugasan[] = masterBeswan.flatMap((b, idx) => {
   const kategoriList = ["MAI Foundation", "Mentorship", "MAI Wilayah", "Pembinaan Nasional"] as const
   return kategoriList.map((kat, ki) => {
@@ -231,6 +250,7 @@ export const dataPenugasan: Penugasan[] = masterBeswan.flatMap((b, idx) => {
     else status = "Belum Mengumpulkan"
 
     const isSubmitted = status !== "Belum Mengumpulkan"
+    const link = isSubmitted ? `https://drive.google.com/file/d/bukti-${b.nid}-${ki + 1}/view` : undefined
     return {
       id: `TUGAS-${b.nid}-${ki + 1}`,
       nid: b.nid,
@@ -238,8 +258,10 @@ export const dataPenugasan: Penugasan[] = masterBeswan.flatMap((b, idx) => {
       wilayah: b.wilayah,
       mentor: b.mentor,
       kategori: kat,
+      judulTugas: JUDUL_TUGAS_MAP[kat],
       statusValidasi: status,
-      linkBukti: isSubmitted ? `https://drive.google.com/file/d/bukti-${b.nid}-${ki + 1}/view` : undefined,
+      linkBukti: link,
+      linkBerkas: link,
       catatanAdmin: status === "Tidak Diterima" ? "Konten belum mencantumkan logo BBM 6 dan format caption belum sesuai pedoman." : status === "Diterima" ? "Tugas sesuai standar penugasan." : undefined,
       submittedAt: isSubmitted ? `${(idx % 10) + 1} Nov 2026, 14:${String((ki * 15) % 60).padStart(2, "0")} WIB` : undefined,
       validasiAt: status === "Diterima" || status === "Tidak Diterima" ? `${(idx % 10) + 2} Nov 2026, 09:30 WIB` : undefined,
@@ -249,14 +271,14 @@ export const dataPenugasan: Penugasan[] = masterBeswan.flatMap((b, idx) => {
 
 // ===================== PRESTASI SAMPLE =====================
 export const dataPrestasi: Prestasi[] = [
-  { id: "PR001", nid: "601001", nama: "Andi Pratama", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Juara 1 Kompetisi Desain Nasional", kategori: "Desain", tingkat: "Nasional", penyelenggara: "Kemendikbud", tanggalPrestasi: "2026-09-10", tanggalPelaporan: "2026-09-15", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat1" },
-  { id: "PR002", nid: "602002", nama: "Bella Sari", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Finalis Hackathon AI Indonesia", kategori: "Teknologi", tingkat: "Nasional", penyelenggara: "KOMINFO", tanggalPrestasi: "2026-10-05", tanggalPelaporan: "2026-10-10", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat2" },
-  { id: "PR003", nid: "601003", nama: "Candra Putra", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Paper Terpilih Konferensi Internasional IEEE", kategori: "Akademik", tingkat: "Internasional", penyelenggara: "IEEE", tanggalPrestasi: "2026-09-20", tanggalPelaporan: "2026-09-25", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat3" },
+  { id: "PR001", nid: "601001", nama: "Andi Pratama", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Juara 1 Kompetisi Desain Nasional", kategori: "Desain", tingkat: "Nasional", penyelenggara: "Kemendikbud", tanggalPrestasi: "2026-09-10", tanggalPelaporan: "2026-09-15", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat1", linkSertifikat: "https://drive.google.com/file/sertifikat1" },
+  { id: "PR002", nid: "602002", nama: "Bella Sari", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Finalis Hackathon AI Indonesia", kategori: "Teknologi", tingkat: "Nasional", penyelenggara: "KOMINFO", tanggalPrestasi: "2026-10-05", tanggalPelaporan: "2026-10-10", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat2", linkSertifikat: "https://drive.google.com/file/sertifikat2" },
+  { id: "PR003", nid: "601003", nama: "Candra Putra", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Paper Terpilih Konferensi Internasional IEEE", kategori: "Akademik", tingkat: "Internasional", penyelenggara: "IEEE", tanggalPrestasi: "2026-09-20", tanggalPelaporan: "2026-09-25", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat3", linkSertifikat: "https://drive.google.com/file/sertifikat3" },
   { id: "PR004", nid: "601004", nama: "Dewi Rahayu", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Juara 3 Lomba Menulis Ilmiah Nasional", kategori: "Akademik", tingkat: "Nasional", penyelenggara: "Dikti", tanggalPrestasi: "2026-10-15", tanggalPelaporan: "2026-10-20", bulanPelaporan: "Oktober 2026" },
-  { id: "PR005", nid: "602005", nama: "Eko Firmansyah", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Best Presenter Youth Forum Asia Pasifik", kategori: "Kepemimpinan", tingkat: "Internasional", penyelenggara: "ASEAN Youth Forum", tanggalPrestasi: "2026-11-01", tanggalPelaporan: "2026-11-05", bulanPelaporan: "November 2026", linkBukti: "https://drive.google.com/file/sertifikat5" },
-  { id: "PR006", nid: "602016", nama: "Putri Anggraeni", wilayah: "Wilayah 2 – Jakarta Selatan", mentor: "Budi Santoso", judul: "Juara 2 Business Plan Competition", kategori: "Wirausaha", tingkat: "Nasional", penyelenggara: "HIPMI", tanggalPrestasi: "2026-09-28", tanggalPelaporan: "2026-10-02", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat6" },
-  { id: "PR007", nid: "601035", nama: "Aditya Pratama", wilayah: "Wilayah 3 – Jakarta Barat", mentor: "Citra Dewi", judul: "Medali Emas Olimpiade Sains Mahasiswa", kategori: "Sains", tingkat: "Nasional", penyelenggara: "Puspresnas", tanggalPrestasi: "2026-10-18", tanggalPelaporan: "2026-10-22", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat7" },
-  { id: "PR008", nid: "602050", nama: "Kurnia Rahayu", wilayah: "Wilayah 4 – Jakarta Timur", mentor: "Dian Pramesti", judul: "Juara 1 Debat Bahasa Inggris Nasional", kategori: "Bahasa", tingkat: "Nasional", penyelenggara: "NUDC Kemendikbud", tanggalPrestasi: "2026-11-04", tanggalPelaporan: "2026-11-08", bulanPelaporan: "November 2026", linkBukti: "https://drive.google.com/file/sertifikat8" },
-  { id: "PR009", nid: "601072", nama: "Rizky Santoso", wilayah: "Wilayah 5 – Jakarta Pusat", mentor: "Eka Nugraha", judul: "Pemenang Beasiswa Riset Inovasi", kategori: "Riset", tingkat: "Nasional", penyelenggara: "BRIN", tanggalPrestasi: "2026-09-12", tanggalPelaporan: "2026-09-18", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat9" },
+  { id: "PR005", nid: "602005", nama: "Eko Firmansyah", wilayah: "Wilayah 1 – Jakarta Utara", mentor: "Ahmad Fauzi", judul: "Best Presenter Youth Forum Asia Pasifik", kategori: "Kepemimpinan", tingkat: "Internasional", penyelenggara: "ASEAN Youth Forum", tanggalPrestasi: "2026-11-01", tanggalPelaporan: "2026-11-05", bulanPelaporan: "November 2026", linkBukti: "https://drive.google.com/file/sertifikat5", linkSertifikat: "https://drive.google.com/file/sertifikat5" },
+  { id: "PR006", nid: "602016", nama: "Putri Anggraeni", wilayah: "Wilayah 2 – Jakarta Selatan", mentor: "Budi Santoso", judul: "Juara 2 Business Plan Competition", kategori: "Wirausaha", tingkat: "Nasional", penyelenggara: "HIPMI", tanggalPrestasi: "2026-09-28", tanggalPelaporan: "2026-10-02", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat6", linkSertifikat: "https://drive.google.com/file/sertifikat6" },
+  { id: "PR007", nid: "601035", nama: "Aditya Pratama", wilayah: "Wilayah 3 – Jakarta Barat", mentor: "Citra Dewi", judul: "Medali Emas Olimpiade Sains Mahasiswa", kategori: "Sains", tingkat: "Nasional", penyelenggara: "Puspresnas", tanggalPrestasi: "2026-10-18", tanggalPelaporan: "2026-10-22", bulanPelaporan: "Oktober 2026", linkBukti: "https://drive.google.com/file/sertifikat7", linkSertifikat: "https://drive.google.com/file/sertifikat7" },
+  { id: "PR008", nid: "602050", nama: "Kurnia Rahayu", wilayah: "Wilayah 4 – Jakarta Timur", mentor: "Dian Pramesti", judul: "Juara 1 Debat Bahasa Inggris Nasional", kategori: "Bahasa", tingkat: "Nasional", penyelenggara: "NUDC Kemendikbud", tanggalPrestasi: "2026-11-04", tanggalPelaporan: "2026-11-08", bulanPelaporan: "November 2026", linkBukti: "https://drive.google.com/file/sertifikat8", linkSertifikat: "https://drive.google.com/file/sertifikat8" },
+  { id: "PR009", nid: "601072", nama: "Rizky Santoso", wilayah: "Wilayah 5 – Jakarta Pusat", mentor: "Eka Nugraha", judul: "Pemenang Beasiswa Riset Inovasi", kategori: "Riset", tingkat: "Nasional", penyelenggara: "BRIN", tanggalPrestasi: "2026-09-12", tanggalPelaporan: "2026-09-18", bulanPelaporan: "September 2026", linkBukti: "https://drive.google.com/file/sertifikat9", linkSertifikat: "https://drive.google.com/file/sertifikat9" },
   { id: "PR010", nid: "602095", nama: "Syahrul Maulana", wilayah: "Wilayah 7 – Bogor", mentor: "Gita Lestari", judul: "Juara Harapan 1 Startup Challenge", kategori: "Teknologi", tingkat: "Nasional", penyelenggara: "MDI Ventures", tanggalPrestasi: "2026-10-25", tanggalPelaporan: "2026-10-30", bulanPelaporan: "Oktober 2026" },
 ]

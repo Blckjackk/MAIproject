@@ -2,21 +2,16 @@
 
 import { useState, useMemo } from "react"
 import { DashboardHeader } from "@/components/dashboard-shell"
-import { masterBeswan, dataPenugasan, dataPrestasi, periodeMentorship } from "@/lib/mock-data"
+import { masterBeswan, dataPenugasan, dataPrestasi, masterWilayah } from "@/lib/mock-data"
+import { exportToCsv } from "@/lib/export-csv"
 import type { Beswan } from "@/lib/mock-data"
 import {
-  AlertTriangle,
-  CheckCircle,
   Search,
-  Filter,
+  Download,
   X,
-  ExternalLink,
-  BookOpen,
-  UserCheck,
-  CheckSquare,
-  Star,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
 } from "lucide-react"
 
 export default function DataBeswanPage() {
@@ -58,347 +53,277 @@ export default function DataBeswanPage() {
     return dataPrestasi.filter((p) => p.nid === activeBeswan.nid)
   }, [activeBeswan])
 
+  const handleExportCsv = () => {
+    const exportData = filteredData.map((b) => ({
+      NID: b.nid,
+      Nama_Beswan: b.nama,
+      Universitas: b.universitas,
+      Jurusan: b.jurusan,
+      Wilayah: b.wilayah,
+      Mentor: b.mentor,
+      Status: b.status,
+    }))
+    exportToCsv(exportData, `data-beswan-bbm6-${new Date().toISOString().slice(0, 10)}.csv`)
+  }
+
   return (
-    <div className="flex flex-col flex-1 overflow-y-auto">
+    <div className="flex flex-col flex-1 overflow-y-auto bg-[#F8F9FA]">
       <DashboardHeader
         title="Data Beswan"
-        subtitle="Pusat penelusuran master peserta Beasiswa Bintang Mandiri Angkatan 6"
+        subtitle="Direktori master 121 penerima beasiswa Beasiswa Bintang Mandiri Angkatan 6"
+        actions={
+          <button
+            onClick={handleExportCsv}
+            className="flex items-center gap-1.5 rounded-lg border border-[#DADCE0] bg-white px-3 py-1.5 text-xs font-medium text-[#3C4043] hover:bg-[#F8F9FA] hover:text-[#202124] transition-colors"
+          >
+            <Download className="h-3.5 w-3.5 text-[#5F6368]" />
+            <span>Ekspor CSV</span>
+          </button>
+        }
       />
 
-      <div className="flex-1 space-y-6 p-6">
-        {/* Warning: 121 vs 120 */}
-        <div className="flex items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/30 dark:text-amber-300">
-          <AlertTriangle className="h-4 w-4 shrink-0 text-amber-600" />
-          <div>
-            <strong>Perhatian Verifikasi Data Master:</strong> Total daftar NID adalah <strong>121 NID unik</strong>, sedangkan brief menyebutkan <strong>120 beswan</strong>. Seluruh 121 NID terdaftar di bawah ini dan NID diproses sebagai tipe teks/string tanpa konversi format.
-          </div>
-        </div>
+      <div className="flex-1 space-y-8 p-8 max-w-7xl">
+        {/* Tabel Data Beswan */}
+        <div className="rounded-xl border border-[#E8EAED] bg-white overflow-hidden">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-[#E8EAED] p-5">
+            <div>
+              <h2 className="text-sm font-semibold text-[#202124]">Direktori Peserta BBM 6</h2>
+              <p className="text-xs text-[#5F6368] mt-0.5">
+                Menampilkan {filteredData.length} data peserta · NID diperlakukan sebagai teks baku
+              </p>
+            </div>
 
-        {/* Filter Bar */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="relative min-w-[260px] flex-1">
-            <Search className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value)
-                setPage(1)
-              }}
-              placeholder="Cari berdasarkan NID, nama, universitas..."
-              className="w-full rounded-lg border border-border bg-background pl-9 pr-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-          </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="relative w-64">
+                <Search className="absolute left-3 top-2.5 h-4 w-4 text-[#5F6368]" />
+                <input
+                  type="text"
+                  placeholder="Cari NID, nama, universitas..."
+                  value={search}
+                  onChange={(e) => {
+                    setSearch(e.target.value)
+                    setPage(1)
+                  }}
+                  className="w-full rounded-lg border border-[#DADCE0] bg-white pl-9 pr-3 py-1.5 text-xs text-[#202124] placeholder-[#5F6368] focus:border-[#1A73E8] focus:outline-none"
+                />
+              </div>
 
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-muted-foreground" />
-            <select
-              value={selectedWilayah}
-              onChange={(e) => {
-                setSelectedWilayah(e.target.value)
-                setPage(1)
-              }}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option>Semua Wilayah</option>
-              <option>Wilayah 1 – Jakarta Utara</option>
-              <option>Wilayah 2 – Jakarta Selatan</option>
-              <option>Wilayah 3 – Jakarta Barat</option>
-              <option>Wilayah 4 – Jakarta Timur</option>
-              <option>Wilayah 5 – Jakarta Pusat</option>
-              <option>Wilayah 6 – Bekasi</option>
-              <option>Wilayah 7 – Bogor</option>
-              <option>Wilayah 8 – Tangerang</option>
-            </select>
-
-            <select
-              value={selectedStatus}
-              onChange={(e) => {
-                setSelectedStatus(e.target.value)
-                setPage(1)
-              }}
-              className="rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-            >
-              <option>Semua Status</option>
-              <option>Aktif</option>
-              <option>Perlu Pemeriksaan</option>
-            </select>
-
-            {(search || selectedWilayah !== "Semua Wilayah" || selectedStatus !== "Semua Status") && (
-              <button
-                onClick={() => {
-                  setSearch("")
-                  setSelectedWilayah("Semua Wilayah")
-                  setSelectedStatus("Semua Status")
+              <select
+                value={selectedWilayah}
+                onChange={(e) => {
+                  setSelectedWilayah(e.target.value)
                   setPage(1)
                 }}
-                className="rounded-lg border border-border px-2.5 py-2 text-xs font-medium text-muted-foreground hover:bg-muted"
+                className="rounded-lg border border-[#DADCE0] bg-white px-3 py-1.5 text-xs text-[#202124] focus:border-[#1A73E8] focus:outline-none"
               >
-                Reset
-              </button>
-            )}
-          </div>
-        </div>
+                <option>Semua Wilayah</option>
+                {masterWilayah.map((w) => (
+                  <option key={w.id} value={w.wilayah}>
+                    {w.wilayah.split("–")[0].trim()}
+                  </option>
+                ))}
+              </select>
 
-        {/* Master Beswan Table */}
-        <div className="rounded-xl border border-border bg-card shadow-xs">
-          <div className="flex items-center justify-between border-b border-border px-5 py-4">
-            <div>
-              <h3 className="text-sm font-semibold text-foreground">Daftar Master Beswan</h3>
-              <p className="text-xs text-muted-foreground">Klik tombol profil untuk melihat ringkasan seluruh riwayat aktivitas</p>
+              <select
+                value={selectedStatus}
+                onChange={(e) => {
+                  setSelectedStatus(e.target.value)
+                  setPage(1)
+                }}
+                className="rounded-lg border border-[#DADCE0] bg-white px-3 py-1.5 text-xs text-[#202124] focus:border-[#1A73E8] focus:outline-none"
+              >
+                <option>Semua Status</option>
+                <option value="Aktif">Aktif</option>
+                <option value="Cuti">Cuti</option>
+              </select>
             </div>
-            <span className="rounded-full bg-muted px-3 py-1 text-xs font-semibold text-muted-foreground">
-              {filteredData.length} Peserta Ditemukan
-            </span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-xs">
               <thead>
-                <tr className="border-b border-border bg-muted/20">
-                  <th className="px-5 py-3 text-left font-semibold text-muted-foreground">NID</th>
-                  <th className="px-3 py-3 text-left font-semibold text-muted-foreground">No.</th>
-                  <th className="px-3 py-3 text-left font-semibold text-muted-foreground">Nama Peserta</th>
-                  <th className="px-3 py-3 text-left font-semibold text-muted-foreground">Perguruan Tinggi</th>
-                  <th className="px-3 py-3 text-left font-semibold text-muted-foreground">Wilayah</th>
-                  <th className="px-3 py-3 text-left font-semibold text-muted-foreground">Mentor</th>
-                  <th className="px-3 py-3 text-center font-semibold text-muted-foreground">Status Data</th>
-                  <th className="px-5 py-3 text-center font-semibold text-muted-foreground">Aksi</th>
+                <tr className="border-b border-[#E8EAED] bg-[#F8F9FA] text-[#5F6368]">
+                  <th className="py-3 px-5 text-left font-medium">NID</th>
+                  <th className="py-3 px-5 text-left font-medium">Nama Beswan</th>
+                  <th className="py-3 px-5 text-left font-medium">Perguruan Tinggi</th>
+                  <th className="py-3 px-5 text-left font-medium">Jurusan</th>
+                  <th className="py-3 px-4 text-left font-medium">Wilayah</th>
+                  <th className="py-3 px-4 text-left font-medium">Mentor</th>
+                  <th className="py-3 px-4 text-center font-medium">Status</th>
+                  <th className="py-3 px-5 text-right font-medium">Aksi</th>
                 </tr>
               </thead>
-              <tbody>
-                {paginatedData.length === 0 ? (
-                  <tr>
-                    <td colSpan={8} className="py-8 text-center text-muted-foreground">
-                      Tidak ada peserta yang cocok dengan kriteria pencarian.
+              <tbody className="divide-y divide-[#E8EAED]">
+                {paginatedData.map((b) => (
+                  <tr
+                    key={b.nid}
+                    onClick={() => setActiveBeswan(b)}
+                    className="hover:bg-[#F8F9FA] transition-colors cursor-pointer"
+                  >
+                    <td className="py-3.5 px-5 font-mono text-[#202124] font-medium">{b.nid}</td>
+                    <td className="py-3.5 px-5 font-medium text-[#202124]">{b.nama}</td>
+                    <td className="py-3.5 px-5 text-[#5F6368]">{b.universitas}</td>
+                    <td className="py-3.5 px-5 text-[#5F6368]">{b.jurusan}</td>
+                    <td className="py-3.5 px-4 font-medium text-[#202124]">{b.wilayah.split("–")[0].trim()}</td>
+                    <td className="py-3.5 px-4 text-[#5F6368]">{b.mentor}</td>
+                    <td className="py-3.5 px-4 text-center">
+                      <span className="inline-flex items-center rounded-md bg-[#E6F4EA] px-2 py-0.5 text-xs font-medium text-[#137333]">
+                        {b.status}
+                      </span>
+                    </td>
+                    <td className="py-3.5 px-5 text-right">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          setActiveBeswan(b)
+                        }}
+                        className="rounded-md border border-[#DADCE0] bg-white px-2.5 py-1 text-xs font-medium text-[#1A73E8] hover:bg-[#F8F9FA] transition-colors"
+                      >
+                        Profil
+                      </button>
                     </td>
                   </tr>
-                ) : (
-                  paginatedData.map((b) => (
-                    <tr key={b.nid} className="border-b border-border/50 last:border-0 hover:bg-muted/30 transition-colors">
-                      <td className="px-5 py-3 font-mono font-bold text-foreground">{b.nid}</td>
-                      <td className="px-3 py-3 font-mono text-muted-foreground">{b.nomorBeswan}</td>
-                      <td className="px-3 py-3 font-medium text-foreground">{b.nama}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{b.universitas}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{b.wilayah.split("–")[0].trim()}</td>
-                      <td className="px-3 py-3 text-muted-foreground">{b.mentor}</td>
-                      <td className="px-3 py-3 text-center">
-                        {b.status === "Aktif" ? (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400">
-                            <CheckCircle className="h-3 w-3" /> Aktif
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
-                            <AlertTriangle className="h-3 w-3" /> Perlu Periksa
-                          </span>
-                        )}
-                      </td>
-                      <td className="px-5 py-3 text-center">
-                        <button
-                          onClick={() => setActiveBeswan(b)}
-                          className="rounded-md border border-border bg-background px-3 py-1 font-medium text-foreground hover:bg-muted hover:border-foreground/20 transition-all shadow-2xs"
-                        >
-                          Lihat Detail
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
+                ))}
               </tbody>
             </table>
           </div>
 
           {/* Pagination */}
-          <div className="flex items-center justify-between border-t border-border px-5 py-3 text-xs text-muted-foreground">
+          <div className="flex items-center justify-between border-t border-[#E8EAED] px-5 py-3 text-xs text-[#5F6368]">
             <span>
-              Menampilkan {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredData.length)} dari {filteredData.length} beswan
+              Halaman {page} dari {totalPages} ({filteredData.length} total peserta)
             </span>
             <div className="flex items-center gap-2">
               <button
-                disabled={page <= 1}
                 onClick={() => setPage((p) => Math.max(p - 1, 1))}
-                className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-foreground transition-colors hover:bg-muted disabled:opacity-40"
+                disabled={page === 1}
+                className="flex items-center gap-1 rounded-md border border-[#DADCE0] bg-white px-2.5 py-1 text-xs font-medium text-[#3C4043] disabled:opacity-40 hover:bg-[#F8F9FA]"
               >
-                <ChevronLeft className="h-3.5 w-3.5" /> Sebelumnya
+                <ChevronLeft className="h-3.5 w-3.5" />
+                <span>Sebelumnya</span>
               </button>
-              <span className="px-2 font-medium text-foreground">
-                Hal {page} / {totalPages}
-              </span>
               <button
-                disabled={page >= totalPages}
                 onClick={() => setPage((p) => Math.min(p + 1, totalPages))}
-                className="flex items-center gap-1 rounded-md border border-border px-2.5 py-1 text-foreground transition-colors hover:bg-muted disabled:opacity-40"
+                disabled={page === totalPages}
+                className="flex items-center gap-1 rounded-md border border-[#DADCE0] bg-white px-2.5 py-1 text-xs font-medium text-[#3C4043] disabled:opacity-40 hover:bg-[#F8F9FA]"
               >
-                Selanjutnya <ChevronRight className="h-3.5 w-3.5" />
+                <span>Berikutnya</span>
+                <ChevronRight className="h-3.5 w-3.5" />
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Slide-over Profile Drawer (Spec 7.6 & 11) */}
+      {/* Slide-over Profile Drawer */}
       {activeBeswan && (
-        <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-xs transition-opacity animate-in fade-in">
-          <div className="flex h-full w-full max-w-xl flex-col bg-card shadow-2xl border-l border-border animate-in slide-in-from-right duration-200">
-            {/* Header */}
-            <div className="flex items-start justify-between border-b border-border p-6 bg-muted/20">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-sm font-bold text-primary">{activeBeswan.nid}</span>
-                  <span className="text-xs text-muted-foreground">· Beswan #{activeBeswan.nomorBeswan}</span>
-                </div>
-                <h2 className="mt-1 text-xl font-bold text-foreground">{activeBeswan.nama}</h2>
-                <p className="text-xs text-muted-foreground">{activeBeswan.universitas}</p>
-              </div>
-              <button
-                onClick={() => setActiveBeswan(null)}
-                className="rounded-lg border border-border p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-              >
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-
-            {/* Content Tabs / Body */}
-            <div className="flex-1 overflow-y-auto p-6 space-y-6">
-              {/* Wilayah & Mentor */}
-              <div className="grid grid-cols-2 gap-3 rounded-lg border border-border p-4 bg-background">
+        <div className="fixed inset-0 z-50 flex justify-end bg-black/30">
+          <div className="h-full w-full max-w-lg bg-white p-6 shadow-2xl overflow-y-auto flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between border-b border-[#E8EAED] pb-4">
                 <div>
-                  <p className="text-[11px] text-muted-foreground">Kelompok / Wilayah</p>
-                  <p className="font-medium text-xs text-foreground mt-0.5">{activeBeswan.wilayah}</p>
+                  <h3 className="text-base font-semibold text-[#202124]">{activeBeswan.nama}</h3>
+                  <p className="font-mono text-xs text-[#5F6368] mt-0.5">NID: {activeBeswan.nid}</p>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Mentor Pendamping</p>
-                  <p className="font-medium text-xs text-foreground mt-0.5">{activeBeswan.mentor}</p>
-                </div>
+                <button
+                  onClick={() => setActiveBeswan(null)}
+                  className="rounded-full p-1.5 text-[#5F6368] hover:bg-[#F1F3F4] hover:text-[#202124]"
+                >
+                  <X className="h-5 w-5" />
+                </button>
               </div>
 
-              {/* Rekap Pembinaan Nasional */}
-              <div className="rounded-lg border border-border p-4 bg-background space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <BookOpen className="h-4 w-4 text-primary" />
-                  <h4>Pembinaan Nasional</h4>
-                </div>
-                <div className="rounded-md bg-blue-50 dark:bg-blue-950/40 p-2.5 text-[11px] text-blue-700 dark:text-blue-300">
-                  Opening Program: <span className="font-semibold">Hadir</span> (terpisah dari perhitungan 5 komponen utama)
-                </div>
-                <div className="grid grid-cols-5 gap-2 text-center text-xs">
-                  <div className="p-2 rounded bg-muted/40 border border-border">
-                    <p className="text-[10px] text-muted-foreground">P. Awal</p>
-                    <p className="font-bold text-emerald-600 mt-1">Hadir</p>
+              {/* Data Akademik & Mentor */}
+              <div className="mt-5 space-y-4">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#70757A]">
+                  Informasi Kepesertaan
+                </h4>
+                <div className="grid grid-cols-2 gap-3 rounded-lg border border-[#E8EAED] p-4 text-xs">
+                  <div>
+                    <p className="text-[#5F6368]">Perguruan Tinggi</p>
+                    <p className="font-medium text-[#202124] mt-0.5">{activeBeswan.universitas}</p>
                   </div>
-                  <div className="p-2 rounded bg-muted/40 border border-border">
-                    <p className="text-[10px] text-muted-foreground">Pre-Test</p>
-                    <p className="font-bold text-emerald-600 mt-1">Hadir</p>
+                  <div>
+                    <p className="text-[#5F6368]">Program Studi</p>
+                    <p className="font-medium text-[#202124] mt-0.5">{activeBeswan.jurusan}</p>
                   </div>
-                  <div className="p-2 rounded bg-muted/40 border border-border">
-                    <p className="text-[10px] text-muted-foreground">Post-Test</p>
-                    <p className="font-bold text-emerald-600 mt-1">Hadir</p>
+                  <div>
+                    <p className="text-[#5F6368]">Wilayah</p>
+                    <p className="font-medium text-[#202124] mt-0.5">{activeBeswan.wilayah}</p>
                   </div>
-                  <div className="p-2 rounded bg-muted/40 border border-border">
-                    <p className="text-[10px] text-muted-foreground">P. Evaluasi</p>
-                    <p className="font-bold text-emerald-600 mt-1">Hadir</p>
+                  <div>
+                    <p className="text-[#5F6368]">Mentor Pendamping</p>
+                    <p className="font-medium text-[#202124] mt-0.5">{activeBeswan.mentor}</p>
                   </div>
-                  <div className="p-2 rounded bg-muted/40 border border-border">
-                    <p className="text-[10px] text-muted-foreground">P. Akhir</p>
-                    <p className="font-bold text-muted-foreground mt-1">–</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between text-xs pt-2 border-t border-border">
-                  <span className="text-muted-foreground">Status Kehadiran Binnas:</span>
-                  <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 font-semibold text-emerald-700">
-                    Hadir Full (4/4 terlaksana)
-                  </span>
-                </div>
-              </div>
-
-              {/* Rekap Mentorship */}
-              <div className="rounded-lg border border-border p-4 bg-background space-y-3">
-                <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                  <UserCheck className="h-4 w-4 text-primary" />
-                  <h4>Riwayat Mentorship (1 Form Terpadu)</h4>
-                </div>
-                <div className="divide-y divide-border/60 text-xs">
-                  {periodeMentorship.slice(0, 5).map((p) => (
-                    <div key={p.id} className="flex items-center justify-between py-2">
-                      <div>
-                        <span className="font-medium text-foreground">{p.nama}</span>
-                        <p className="text-[10px] text-muted-foreground">PM, Pre-Test & Post-Test Hadir</p>
-                      </div>
-                      <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                        Hadir
-                      </span>
-                    </div>
-                  ))}
                 </div>
               </div>
 
               {/* Riwayat Penugasan */}
-              <div className="rounded-lg border border-border p-4 bg-background space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <CheckSquare className="h-4 w-4 text-primary" />
-                    <h4>Penugasan Brand Ambassador</h4>
-                  </div>
-                  <span className="text-xs text-muted-foreground">{beswanTasks.length} tugas</span>
-                </div>
-                <div className="space-y-2 text-xs">
-                  {beswanTasks.map((t) => (
-                    <div key={t.id} className="flex items-center justify-between p-2.5 rounded-md border border-border bg-card">
-                      <div>
-                        <p className="font-medium text-foreground">{t.kategori}</p>
-                        {t.catatanAdmin && (
-                          <p className="text-[10px] text-muted-foreground mt-0.5">Catatan: {t.catatanAdmin}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {t.linkBukti && (
-                          <a
-                            href={t.linkBukti}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary hover:underline text-[11px] inline-flex items-center gap-1"
+              <div className="mt-6 space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#70757A]">
+                  Riwayat Penugasan Brand Ambassador ({beswanTasks.length})
+                </h4>
+                {beswanTasks.length === 0 ? (
+                  <p className="text-xs text-[#5F6368]">Belum ada data penugasan yang tercatat.</p>
+                ) : (
+                  <div className="divide-y divide-[#E8EAED] rounded-lg border border-[#E8EAED] text-xs">
+                    {beswanTasks.map((t) => (
+                      <div key={t.id} className="p-3">
+                        <div className="flex items-center justify-between">
+                          <p className="font-medium text-[#202124]">{t.judulTugas}</p>
+                          <span
+                            className={`rounded-md px-2 py-0.5 text-[11px] font-medium ${
+                              t.statusValidasi === "Diterima"
+                                ? "bg-[#E6F4EA] text-[#137333]"
+                                : t.statusValidasi === "Menunggu Validasi"
+                                ? "bg-[#FEF7E0] text-[#B06000]"
+                                : "bg-[#FCE8E6] text-[#C5221F]"
+                            }`}
                           >
-                            Bukti <ExternalLink className="h-3 w-3" />
-                          </a>
+                            {t.statusValidasi}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-[#5F6368] mt-1">Kategori: {t.kategori}</p>
+                        {t.catatanAdmin && (
+                          <p className="mt-1 text-[11px] text-[#3C4043] bg-[#F8F9FA] p-2 rounded">
+                            Catatan: {t.catatanAdmin}
+                          </p>
                         )}
-                        <span
-                          className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
-                            t.statusValidasi === "Diterima"
-                              ? "bg-emerald-50 text-emerald-700"
-                              : t.statusValidasi === "Menunggu Validasi"
-                              ? "bg-amber-50 text-amber-700"
-                              : t.statusValidasi === "Tidak Diterima"
-                              ? "bg-red-50 text-red-700"
-                              : "bg-muted text-muted-foreground"
-                          }`}
-                        >
-                          {t.statusValidasi}
-                        </span>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               {/* Prestasi */}
-              {beswanPrestasi.length > 0 && (
-                <div className="rounded-lg border border-border p-4 bg-background space-y-3">
-                  <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
-                    <Star className="h-4 w-4 text-amber-500" />
-                    <h4>Prestasi yang Dilaporkan</h4>
-                  </div>
-                  <div className="space-y-2 text-xs">
+              <div className="mt-6 space-y-3">
+                <h4 className="text-xs font-semibold uppercase tracking-wider text-[#70757A]">
+                  Prestasi Terlaporkan ({beswanPrestasi.length})
+                </h4>
+                {beswanPrestasi.length === 0 ? (
+                  <p className="text-xs text-[#5F6368]">Belum ada laporan prestasi.</p>
+                ) : (
+                  <div className="divide-y divide-[#E8EAED] rounded-lg border border-[#E8EAED] text-xs">
                     {beswanPrestasi.map((p) => (
-                      <div key={p.id} className="p-2.5 rounded-md border border-border bg-card">
-                        <p className="font-medium text-foreground">{p.judul}</p>
-                        <p className="text-[10px] text-muted-foreground mt-0.5">
+                      <div key={p.id} className="p-3">
+                        <p className="font-medium text-[#202124]">{p.judul}</p>
+                        <p className="text-[11px] text-[#5F6368] mt-0.5">
                           {p.tingkat} · {p.penyelenggara} ({p.bulanPelaporan})
                         </p>
                       </div>
                     ))}
                   </div>
-                </div>
-              )}
+                )}
+              </div>
+            </div>
+
+            <div className="pt-6 border-t border-[#E8EAED]">
+              <button
+                onClick={() => setActiveBeswan(null)}
+                className="w-full rounded-lg border border-[#DADCE0] py-2 text-xs font-medium text-[#3C4043] hover:bg-[#F8F9FA]"
+              >
+                Tutup Profil
+              </button>
             </div>
           </div>
         </div>
